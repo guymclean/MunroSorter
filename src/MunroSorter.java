@@ -1,16 +1,13 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  *
@@ -35,28 +32,75 @@ public class MunroSorter {
             int maxHeight,
             char nameSortParam,
             char heightSortParam) {
-        munros = readMunrosFromFile(filepath); 
+        munros = CSVUtils.readMunrosFromFile(filepath); 
         this.categoryToFilter = categoryToFilter;
         this.limit = limit;
         this.minHeight = minHeight;
         this.maxHeight = maxHeight;
         this.nameSortParam = nameSortParam;
         this.heightSortParam = heightSortParam;
+        applyFilters();
     }
     
     
-    private Munro createMunroFromString(
-            List<String> munroData,
-            int nameIndex,
-            int heightInMetersIndex,
-            int hillCategoryIndex,
-            int gridRefIndex) {
-        String name = munroData.get(nameIndex);
-        float heightInMeters = Float.valueOf(munroData.get(heightInMetersIndex));
-        String hillCategory = munroData.get(hillCategoryIndex);
-        String gridRef = munroData.get(gridRefIndex);
-        Munro munro = new Munro(name, heightInMeters, hillCategory, gridRef);
-        return munro;
+    private void applyFilters() {
+        
+        boolean sortedByHeight = false;
+        
+        if (categoryToFilter != 'x') {
+            filterCategory(categoryToFilter);
+        }
+        if (maxHeight > -1) {
+            if (maxHeight < minHeight) {
+                System.out.println("Max height filter is smaller than min height filter and has not been applied");
+            }
+            else {
+                filterMaxHeight(maxHeight);
+            }
+        }
+        if (minHeight > -1) {
+            if (minHeight > maxHeight && maxHeight != -1) {
+                System.out.println("Min height filter is greater than max height filter and has not been applied");
+            }
+            else {
+                filterMinHeight(minHeight);
+            }
+        }
+        if (heightSortParam != 'x') {
+            sortByHeight(heightSortParam);
+            sortedByHeight = true;
+        }
+        if (nameSortParam != 'x') {
+            if (!sortedByHeight) {
+                sortByName(nameSortParam);
+            }
+            else {
+                sortSecondaryByName(nameSortParam);
+            }
+        }        
+        if (limit > 0) {
+            limitBy(limit);
+        }
+    }
+  
+    
+    public void filterCategory(char filterOption) {
+        if (filterOption == 't') {
+            munros.removeIf(munro -> munro.getHillCategory().equals("MUN"));
+        }
+        else {
+            munros.removeIf(munro -> munro.getHillCategory().equals("TOP"));
+        }
+    }
+    
+    
+    public void filterMaxHeight(int maxHeight) {
+        munros.removeIf(munro -> munro.getHeightInMeters() > maxHeight);
+    }
+    
+    
+    public void filterMinHeight(int minHeight) {
+        munros.removeIf(munro -> munro.getHeightInMeters() < minHeight);
     }
     
     
@@ -65,6 +109,13 @@ public class MunroSorter {
     }
     
     
+    public void limitBy(int limit) {
+        if (limit < munros.size()) {
+            munros = munros.subList(0, limit);
+        }
+    }
+        
+    
     private void print(){
         for (Munro munro: munros) {
             System.out.println(munro);
@@ -72,47 +123,71 @@ public class MunroSorter {
     }
     
     
-    private List<Munro> readMunrosFromFile(String filepath) {
+    public void sortByHeight(char sortParam) {
+        Collections.sort(munros, new Munro.HeightComparator());
+        if (sortParam == 'd') {
+            Collections.reverse(munros);
+        }
+    }
+    
+    
+    public void sortByName(char sortParam) {
+        Collections.sort(munros, new Munro.NameComparator());
+        if (sortParam == 'd') {
+            Collections.reverse(munros);
+        }
+    }
+    
+    
+    private void sortSecondaryByName(char sortParam) {
+        // look for duplicates in height
+//        sort or swap list items
 
-        ArrayList<Munro> munros = new ArrayList<>();
-        String csvLine = "";
-        char delimeter = ',';
+        int startOfDuplicatesIndex = -1;
+        int endOfDuplicatesIndex = -1;
+        float duplicateHeight;
+        
 
-        try (BufferedReader br = new BufferedReader(new FileReader(filepath))) {
-
-            String firstLine = br.readLine();
-            String[] columnTitles = firstLine.split(String.valueOf(delimeter));
-            List<String> columnNames = Arrays.asList(columnTitles);
-
-            int nameIndex = columnNames.indexOf("Name");
-            int heightInMetersIndex = columnNames.indexOf("Height (m)");
-            int hillCategoryIndex = columnNames.indexOf("Post 1997");
-            int gridRefIndex = columnNames.indexOf("Grid Ref");
-
-            while ((csvLine = br.readLine()) != null) {
-                List<String> munroData = CSVUtils.parseLine(csvLine, delimeter);
-
-                try {
-                    Munro munro = this.createMunroFromString(
-                            munroData,
-                            nameIndex,
-                            heightInMetersIndex,
-                            hillCategoryIndex,
-                            gridRefIndex);
-                    if (!munro.getHillCategory().equals("")) {
-                        munros.add(munro);
-                    }
+        for (int i=0; i<munros.size()-1; i++) {
+            float thisHeight = munros.get(i).getHeightInMeters();
+            float nextHeight = munros.get(i+1).getHeightInMeters();
+            if (thisHeight == nextHeight) {
+                if (startOfDuplicatesIndex == -1) {
+                    startOfDuplicatesIndex = i;
                 }
-                catch (Exception e) {
-                    continue;
+                endOfDuplicatesIndex = i+1;
+            }
+            else {
+                if (startOfDuplicatesIndex != -1) {
+                    sortDuplicateHeightsByName(
+                            startOfDuplicatesIndex,
+                            endOfDuplicatesIndex
+                    );
+                    startOfDuplicatesIndex = -1;
+                    endOfDuplicatesIndex = -1;
                 }
             }
+            if (i == munros.size()-2 && startOfDuplicatesIndex != -1) {
+                sortDuplicateHeightsByName(
+                        startOfDuplicatesIndex,
+                        endOfDuplicatesIndex
+                );
+            }
         }
-        catch (IOException e) {
-            e.printStackTrace();
+    }
+    
+    
+    private void sortDuplicateHeightsByName(
+            int startOfDuplicatesIndex, 
+            int endOfDuplicatesIndex) {
+        Collections.sort(
+                munros.subList(startOfDuplicatesIndex, endOfDuplicatesIndex+1),
+                new Munro.NameComparator()
+        );
+        if (nameSortParam == 'd') {
+            Collections.reverse(munros.subList(startOfDuplicatesIndex, endOfDuplicatesIndex+1));
         }
-
-        return munros;        
+        
     }
     
     

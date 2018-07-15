@@ -2,37 +2,17 @@
 import java.util.Comparator;
 import java.util.Objects;
 
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 /**
  *
  * @author Guy
  */
 public class Munro{
+    
     private final String name;
     private final float heightInMeters;
     private final String hillCategory;
     private final String gridRef;
-
-//    public String getName() {
-//        return name;
-//    }
-//
-    public float getHeightInMeters() {
-        return heightInMeters;
-    }
-//
-    public String getHillCategory() {
-        return hillCategory;
-    }
-//
-//    public String getGridRef() {
-//        return gridRef;
-//    }
+    
     
     Munro(String name, float heightInMeters, String hillCategory, String gridRef) {
         this.name = name;
@@ -41,6 +21,17 @@ public class Munro{
         this.gridRef = gridRef;
     }
 
+    
+    public float getHeightInMeters() {
+        return heightInMeters;
+    }
+
+    
+    public String getHillCategory() {
+        return hillCategory;
+    }
+    
+    
     @Override
     public int hashCode() {
         int hash = 3;
@@ -101,4 +92,5 @@ public class Munro{
             return 0;
         }
     }
+    
 }

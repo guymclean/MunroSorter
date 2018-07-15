@@ -1,12 +1,6 @@
 
 import java.util.List;
 
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 /**
  *
  * @author Guy
@@ -18,10 +12,16 @@ public class Sort {
      */
     public static void main(String[] args) {
         
-        String filepath = "C:\\Users\\Guy\\Documents\\NetBeansProjects\\MunroSorter\\data\\munro_test_data_2_munros.csv";
+        String filepath = "C:\\Users\\Guy\\Documents\\NetBeansProjects\\MunroSorter\\data\\munro_data.csv";
         
         List<Munro> munros = new MunroSorter
                 .Builder(filepath)
+                .sortByHeight('a')
+                .sortByName('d')
+                .minHeight(1048)
+                .maxHeight(1050)
+                .filterCategory('m')
+//                .limit(10)
                 .build();
         
         for (Munro munro: munros) {
