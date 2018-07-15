@@ -1,5 +1,5 @@
 # MunroSorter
-Java library to filter munro CSV files for XDesign
+Java library to filter munro CSV files for XDesign.
 
 The library can be used as follows:
 
@@ -37,8 +37,10 @@ munros with larger heights than that specified are removed from the list
 - limit(int limit)
 limits the size of the list to that specified by limit, after all other filters have been completed
 
-The order in which filter features are specified does not matter.
-If both sorting by name and height are specified, the list will be sorted by height, according to the height sorting parameter, and then munros with the same height will be sorted according to the name sorting parameter
+The order in which filter features are specified does not matter, and none are required, however the filtering features must be placed between Builder(filepath) and build().
+
+If both sorting by name and height are specified, the list will be sorted by height, according to the height sorting parameter, and then munros with the same height will be sorted according to the name sorting parameter.
+
 Here are a couple of examples of the types of queries that can be executed:
 
 <pre>
